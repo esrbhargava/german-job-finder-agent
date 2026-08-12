@@ -19,7 +19,7 @@ class JobPosting(BaseModel):
 class JobListings(BaseModel):
     jobs: List[JobPosting]
 
-def parse_jobs_from_markdown(markdown_text: str) -> List[dict]:
+def parse_job_listings_from_markdown(markdown_text: str) -> List[dict]:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         print("[ERROR] GEMINI_API_KEY not found in .env file!")
@@ -41,7 +41,7 @@ def parse_jobs_from_markdown(markdown_text: str) -> List[dict]:
 
     try:
         response = client.models.generate_content(
-            model='gemini-flash-latest',
+            model='gemini-3.5-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
