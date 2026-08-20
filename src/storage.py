@@ -1,47 +1,51 @@
 import json
 import os
-from typing import List, Dict, Any
+import hashlib
+from typing import List, Tuple
+from parser import JobPosting
 
-DATA_FILE = os.path.join("data", "jobs.json")
+DATA_DIR = "data"
+STORAGE_FILE = os.path.join(DATA_DIR, "jobs.json")
 
-def load_existing_jobs() -> List[Dict[str, Any]]:
-    """Loads existing jobs from local JSON file."""
-    if not os.path.exists(DATA_FILE):
+def ensure_data_dir():
+    if not os.path.exists(DATA_DIR):
+        os.makedirs(DATA_DIR)
+
+def load_existing_jobs() -> List[dict]:
+    ensure_data_dir()
+    if not os.path.exists(STORAGE_FILE):
         return []
     try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
+        with open(STORAGE_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except (json.JSONDecodeError, IOError):
+    except Exception as e:
+        print(f"[ERROR] Failed to load existing jobs: {e}")
         return []
 
-def save_jobs(jobs: List[Dict[str, Any]]) -> None:
-    """Saves job listings to local JSON file."""
-    os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(jobs, f, indent=4, ensure_ascii=False)
-
-def deduplicate_and_save(new_jobs: List[Dict[str, Any]]) -> tuple[int, int]:
-    """
-    Appends only unique new jobs based on apply_url or title+company fallback.
-    Returns (added_count, total_count).
-    """
+def deduplicate_and_save(new_jobs: List[JobPosting]) -> Tuple[int, int]:
     existing_jobs = load_existing_jobs()
-    
-    # Track existing unique keys
-    existing_keys = {
-        job.get("apply_url") or f"{job.get('title')}_{job.get('company')}"
-        for job in existing_jobs
-    }
-    
+    existing_hashes = {job.get("hash") for job in existing_jobs if "hash" in job}
+
     added_count = 0
     for job in new_jobs:
-        job_key = job.get("apply_url") or f"{job.get('title')}_{job.get('company')}"
-        if job_key not in existing_keys:
-            existing_jobs.append(job)
-            existing_keys.add(job_key)
+        # Support both Pydantic model and dict
+        if isinstance(job, JobPosting):
+            job_dict = job.model_dump()
+        else:
+            job_dict = dict(job)
+
+        # Generate MD5 hash based on URL or title+company
+        key_str = job_dict.get("apply_url") or job_dict.get("url") or f"{job_dict.get('title')}_{job_dict.get('company')}"
+        job_hash = hashlib.md5(key_str.encode("utf-8")).hexdigest()
+        job_dict["hash"] = job_hash
+
+        if job_hash not in existing_hashes:
+            existing_jobs.append(job_dict)
+            existing_hashes.add(job_hash)
             added_count += 1
-            
-    if added_count > 0:
-        save_jobs(existing_jobs)
-        
+
+    ensure_data_dir()
+    with open(STORAGE_FILE, "w", encoding="utf-8") as f:
+        json.dump(existing_jobs, f, indent=2, ensure_ascii=False)
+
     return added_count, len(existing_jobs)
