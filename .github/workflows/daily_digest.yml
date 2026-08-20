@@ -37,4 +37,3 @@ jobs:
           commit_message: "chore: update daily job digest [skip ci]"
           file_pattern: "data/*"
           skip_dirty_check: true
-          skip_empty_commit: true
