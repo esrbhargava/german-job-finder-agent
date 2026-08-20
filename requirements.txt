@@ -1,4 +1,4 @@
-crawl4ai
+﻿crawl4ai
 playwright
 pydantic
 google-genai
