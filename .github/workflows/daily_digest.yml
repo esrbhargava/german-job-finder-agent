@@ -27,6 +27,8 @@ jobs:
           playwright install chromium
 
       - name: Run Job Finder Agent Pipeline
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python main.py
 
       - name: Commit and push updated digest
@@ -34,3 +36,5 @@ jobs:
         with:
           commit_message: "chore: update daily job digest [skip ci]"
           file_pattern: "data/*"
+          skip_dirty_check: true
+          skip_empty_commit: true
