@@ -1,5 +1,5 @@
 # 🎯 Germany Data Engineering Job Digest
-**Generated:** 2026-08-28 21:32 | **Top Matches Found:** 0
+**Generated:** 2026-08-29 07:08 | **Top Matches Found:** 0
 
 ---
 
